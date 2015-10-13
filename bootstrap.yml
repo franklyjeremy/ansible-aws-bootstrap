@@ -1,0 +1,38 @@
+---
+- hosts: localhost
+  connection: local
+  vars:
+      aws_access_key:
+      aws_secret_key:
+      aws_default_region:
+      git_bootstrap_user:
+      git_bootstrap_pass:
+  tasks:
+    - name: Create config file
+      shell: mkdir -p ~/.aws && touch ~/.aws/credentials
+
+    - name: Print the text for ~/.aws/credentials
+      shell: echo "[default]" > ~/.aws/credentials && echo "aws_access_key_id = {{ aws_access_key }}" >> ~/.aws/credentials && echo "aws_secret_access_key = {{ aws_secret_key }}" >> ~/.aws/credentials && echo "region = {{ aws_default_region }}" >> ~/.aws/credentials
+
+    - name: Find the resourceId using the AWS metadata service
+      shell: curl http://169.254.169.254/latest/meta-data/instance-id
+      register: instanceId
+
+    - name: Find the tag value for appname based on the resourceId
+      shell: aws ec2 describe-tags --filters "Name=resource-id,Values={{ instanceId.stdout }}" --output text | grep appname | awk '{print $5}'
+      register: appname
+
+    - name: Find the tag value for env based on the resourceId
+      shell: aws ec2 describe-tags --filters "Name=resource-id,Values={{ instanceId.stdout }}" --output text | grep env | awk '{print $5}'
+      register: env
+
+    - name: Creat a directory to clone your-repo in
+      shell: mkdir -p ~/your-repo
+
+    - name: Clone your-repo
+      git: repo=https://{{ git_bootstrap_user }}:{{ git_bootstrap_pass }}@bitbucket.org/your-git-account/your-repo.git dest=~/your-repo
+
+    - name: Run the playbook or role that corresponds to the appname with the env variable
+      shell: ansible-playbook --inventory="localhost," {{ appname.stdout }}.yml -e 'env={{ env.stdout }}'
+      args:
+        chdir: ~/your-repo/
