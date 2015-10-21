@@ -2,11 +2,11 @@
 - hosts: localhost
   connection: local
   vars:
-      aws_access_key:
-      aws_secret_key:
-      aws_default_region:
-      git_bootstrap_user:
-      git_bootstrap_pass:
+#      aws_access_key: ## use roles instead of IAM credentials, it's better security
+#      aws_secret_key: ## use roles instead of IAM credentials, it's better security
+      aws_default_region: ## you need to supply this for aws-cli to work
+      git_bootstrap_user: ## use this if you don't want to stage an AMI with a "deploy" key, or make sure the user is read-only
+      git_bootstrap_pass: ## use this if you don't want to stage an AMI with a "deploy" key, or make sure the user is read-only
   tasks:
     - name: Create config file
       shell: mkdir -p ~/.aws && touch ~/.aws/credentials
